@@ -51,6 +51,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int status;                  // stores state of exit
+  int priority;                // stores priority of process
 };
 
 

@@ -70,6 +70,8 @@ myproc(void) {
 // If found, change state to EMBRYO and initialize
 // state required to run in the kernel.
 // Otherwise return 0.
+//allocproc allocates slot in process table
+//slots containing stuff in struct proc in proc.h
 static struct proc*
 allocproc(void)
 {
@@ -85,11 +87,13 @@ allocproc(void)
   release(&ptable.lock);
   return 0;
 
-found:
+found: //if process is found and was unused
   p->state = EMBRYO;
   p->pid = nextpid++;
 
-  release(&ptable.lock);
+  p->priority = 30; //just picking num for priority
+
+  release(&ptable.lock); //cant forget to release the lock
 
   // Allocate kernel stack.
   if((p->kstack = kalloc()) == 0){
@@ -593,4 +597,50 @@ procdump(void)
     }
     cprintf("\n");
   }
+}
+
+int prntinfo(void)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+    cprintf("name \t pid \t state \t priority \n");
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    
+      if(p->state == RUNNING)
+      {
+        cprintf("%s \t %d  \t RUNNING \t %d \n ", p->name, p->pid, p->priority );
+      }
+      else if(p->state == SLEEPING)
+      {
+        cprintf("%s \t %d  \t SLEEPING \t %d \n ", p->name, p->pid, p->priority );
+      }
+      else if(p->state == RUNNABLE)
+      {
+        cprintf("%s \t %d  \t RUNNABLE \t %d \n ", p->name, p->pid, p->priority );
+      }
+
+
+    }
+  release(&ptable.lock);
+  return 1;
+
+
+}
+
+int chpri(int pid, int priority)
+{
+  struct proc *p;
+
+  acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+
+      if(p->pid == pid)
+      {
+        p->priority = priority;
+      }
+    }
+  release(&ptable.lock);
+  return pid;
+
 }

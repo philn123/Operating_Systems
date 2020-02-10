@@ -117,3 +117,23 @@ sys_uptime(void)
   return xticks;
 }
 
+int
+sys_prntinfo(void)
+{
+  return prntinfo();
+}
+
+int 
+sys_chpri(void)
+{
+  int pid;
+  int priority;
+  if(argint(0, &pid) < 0 ||
+     argint(1, &priority) < 0
+  ){
+    return -1;
+  }
+
+  return chpri(pid,priority);
+}
+
