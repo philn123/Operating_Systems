@@ -394,7 +394,9 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  int highest_priority = 31;
+  //int highest_priority = 31;
+  struct proc *highest_priority = 0;
+  struct proc *p1 = 0;
   c->proc = 0;
   
   for(;;){
@@ -404,16 +406,16 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
 
-      for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-        if(p->state != RUNNABLE)
-          continue;
-        
-        if(p->priority < highest_priority)
-        {
-          highest_priority = p->priority;
-        }
+        // for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+        //     if(p1->state != RUNNABLE)
+        //       continue;
+            
+        //     if((p1->priority < highest_priority) && (p1->state == RUNNABLE))
+        //     {
+        //       highest_priority = p1->priority;
+        //     }
 
-      }
+        //   }
 
       for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
         if(p->state != RUNNABLE)
@@ -423,7 +425,21 @@ scheduler(void)
         // to release ptable.lock and then reacquire it
         // before jumping back to us.
 
-        if(p->priority == highest_priority){
+        highest_priority = p; //set highest priority to first process you find
+        
+        for(p1 = ptable.proc; p1 < &ptable.proc[NPROC]; p1++){
+          if(p1->state != RUNNABLE)
+            continue;
+          
+          if((p1->priority < highest_priority->priority) && (p1->state == RUNNABLE))
+          {
+            highest_priority = p1;
+          }
+
+        } 
+
+        if(highest_priority){
+          p = highest_priority;
           c->proc = p;
           switchuvm(p);
           p->state = RUNNING;
@@ -624,29 +640,29 @@ int prntinfo(void)
   struct proc *p;
 
   acquire(&ptable.lock);
-    cprintf("name \t pid \t state \t priority \t turnaround \t waiting \n");
+    cprintf("name \t pid \t state \t priority \t turnaround \t waiting/sleeping \n");
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     
       if(p->state == RUNNING)
       {
         cprintf("%s \t %d  \t RUNNING \t %d  \t %d \t\t %d \n ", p->name, p->pid, p->priority, (p->running_time + p->ready_time + p->sleep_time),
-        (p->ready_time));
+        (p->ready_time + p->sleep_time));
       }
       else if(p->state == SLEEPING)
       {
         cprintf("%s \t %d  \t SLEEPING \t %d \t %d \t\t %d \n ", p->name, p->pid, p->priority, (p->running_time + p->ready_time + p->sleep_time),
-        (p->ready_time));
+        (p->ready_time + p->sleep_time));
       }
       else if(p->state == RUNNABLE)
       {
         cprintf("%s \t %d  \t RUNNABLE \t %d \t %d \t\t %d \n ", p->name, p->pid, p->priority, (p->running_time + p->ready_time + p->sleep_time),
-        (p->ready_time));
+        (p->ready_time + p->sleep_time));
       }
 
 
     }
   release(&ptable.lock);
-  return 1;
+  return 0;
 
 
 }
@@ -677,36 +693,31 @@ void update_stats()
       
       if(p->state == SLEEPING)
       {
-        // if((p->ticks % 50) == 0){
-        //   if(p->priority != 0){
-        //     p->priority--;
-        //   }
-        // }
         p->sleep_time++;
       }
       else if(p->state == RUNNABLE)
       {
-        // if(p->ticks >= 100){
-        //   if(p->priority != 0){
-        //     p->priority--;
-        //   }
-        //   p->ticks = 0;
+        if((p->ticks % 5) == 0){
+          if(p->priority != 0){
+            p->priority--;
+          }
+          //p->ticks = 0;
           
-        // }
+        }
         p->ready_time++;
       }
       else if(p->state == RUNNING)
       {
-        // if(p->ticks >= 100){
-        //   if(p->priority != 31)
-        //   {
-        //     p->priority++;
-        //   }
-        //   p->ticks = 0;
-        // }
+        if((p->ticks % 10) == 0){
+          if(p->priority != 31)
+          {
+            p->priority++;
+          }
+          //p->ticks = 0;
+        }
         p->running_time++;
       }
-      //p->ticks++;
+      p->ticks++;
 
     }
 
