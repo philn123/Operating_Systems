@@ -77,6 +77,27 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  
+  //PAGE FAULT CASE
+  case T_PGFLT:
+
+    if((rcr2() < tf->esp) && (rcr2() > (tf->esp-PGSIZE)))
+    {
+      if((allocuvm(myproc()->pgdir, tf->esp - PGSIZE, tf->esp)) == 0)
+      {
+        cprintf("\nCannot allocate more memory\n");
+        exit();
+      }
+      else
+      {
+        // cprintf("\n Allocating an additional page\n");
+        myproc()->stackSize += 1;
+      }
+      
+    }
+
+    break;
+  //END OF PAGE FAULT CASE
 
   //PAGEBREAK: 13
   default:
