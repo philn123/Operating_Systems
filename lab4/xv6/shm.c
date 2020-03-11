@@ -37,13 +37,20 @@ int shm_open(int id, char **pointer) {
   {
     if(shm_table.shm_pages[i].id == id)
     {
-      mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, 
-      V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U);
-      shm_table.shm_pages[i].refcnt += 1;
-      *pointer = (char *)PGROUNDUP(myproc()->sz);
-      myproc()->sz += PGSIZE;
-      release(&(shm_table.lock));
-      return 0;
+      if(mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, 
+      V2P(shm_table.shm_pages[i].frame), PTE_W|PTE_U) == 0)
+      {
+        shm_table.shm_pages[i].refcnt += 1;
+        *pointer = (char *)PGROUNDUP(myproc()->sz);
+        myproc()->sz += PGSIZE;
+        release(&(shm_table.lock));
+        return 0;
+      }
+      else{
+        release(&(shm_table.lock));
+        return -1;
+
+      }
     }
   }
 
@@ -56,12 +63,21 @@ int shm_open(int id, char **pointer) {
       shm_table.shm_pages[j].frame = kalloc();
       memset(shm_table.shm_pages[j].frame, 0, PGSIZE);
       shm_table.shm_pages[j].refcnt = 1;
-      mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, 
-      V2P(shm_table.shm_pages[j].frame), PTE_W|PTE_U);
-      *pointer = (char *)PGROUNDUP(myproc()->sz);
-      myproc()->sz += PGSIZE;
-      release(&(shm_table.lock));
-      return 0;
+
+      if(mappages(myproc()->pgdir, (void *)PGROUNDUP(myproc()->sz), PGSIZE, 
+      V2P(shm_table.shm_pages[j].frame), PTE_W|PTE_U) == 0)
+      {
+        *pointer = (char *)PGROUNDUP(myproc()->sz);
+        myproc()->sz += PGSIZE;
+        release(&(shm_table.lock));
+        return 0;
+      }
+      else
+      {
+        release(&(shm_table.lock));
+        return -1;
+
+      }
 
     }
   }
