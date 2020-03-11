@@ -31,6 +31,7 @@ void shminit() {
 int shm_open(int id, char **pointer) {
 
 //you write this
+  initlock(&(shm_table.lock), "SHM lock");
   acquire(&(shm_table.lock));
   for(int i = 0; i < 64; ++i)
   {
@@ -71,6 +72,7 @@ int shm_open(int id, char **pointer) {
 
 int shm_close(int id) {
 //you write this too!
+initlock(&(shm_table.lock), "SHM lock");
 acquire(&(shm_table.lock));
 
 for(int i = 0; i < 64; ++i)
@@ -80,6 +82,7 @@ for(int i = 0; i < 64; ++i)
     shm_table.shm_pages[i].refcnt--;
     if(shm_table.shm_pages[i].refcnt > 0)
     {
+      //do nothing
     }
     else 
     {
